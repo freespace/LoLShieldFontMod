@@ -11,15 +11,16 @@ extern uint8_t Glyphs[][3];
 
 class Font2C(OptionMatcher):
     @optmatcher
-    def main( self, fontJsonFile):
+    def main( self, fontJsonFile, noHeaderFlag=False):
         glyphs = self.load_glyphs(fontJsonFile)
 
         asciivals = glyphs.keys()
         asciivals.sort()
         asciioffset = asciivals[0]
 
-        print '/* .h */'
-        print cheader
+        if not noHeaderFlag:
+            print '/* .h */'
+            print cheader
 
         print '/* .c */'
         print 'uint8_t Glyph_ASCII_Offset = ', asciioffset, ';'
