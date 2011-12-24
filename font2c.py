@@ -3,20 +3,30 @@
 from optmatch import OptionMatcher, optmatcher, optset
 import json
 
-class Font2h(OptionMatcher):
+class Font2C(OptionMatcher):
     @optmatcher
     def main( self, fontJsonFile):
-        print '/*'
         glyphs = self.load_glyphs(fontJsonFile)
-        print '*/'
 
         asciivals = glyphs.keys()
         asciivals.sort()
         asciioffset = asciivals[0]
 
-        print 'char Glyph_ASCII_offset = ', asciioffset, ';'
+###        print '/* .h */'
+###        print '#ifndef GLYPH_H'
+###        print '#define GLYPH_H'
+###        print 'extern uint8_t Glyph_ASCII_Offset;'
+###        print 'extern uint8_t Glyphs_Count;'
+###        print '#endif'
 
-        print 'char Glyphs[][3] = {'
+###        print 'extern uint8_t Glyphs[][3];'
+
+###        print '/* .c */'
+###        print '#include <inttypes.h>'
+        print 'uint8_t Glyph_ASCII_Offset = ', asciioffset, ';'
+        print 'uint8_t Glyphs_Count = ', len(asciivals), ';'
+
+        print 'uint8_t Glyphs[][3] = {'
         for asciival in asciivals:
             bbb = glyphs[asciival]
             print '    { %s,%s,%s }, '%(hex(bbb[0]), hex(bbb[1]), hex(bbb[2])),
@@ -57,30 +67,27 @@ class Font2h(OptionMatcher):
                             continue
 
                         rows = font[key][7:7+5]
-                        #print key,rows
                         rows = map(lambda x:(x>>2)&0x0F, rows)
                         height = 0
                         width = 0
                         for row in rows:
                             if row:
                                 height += 1
-                            r = row
-                            w = 0
-                            while(r):
-                                if r:
-                                    w+=1
-                                r = r>>1
+                            mask = 0x8;
+                            w = 4
+                            while not row&mask and mask:
+                                w-=1
+                                mask = mask>>1
                             width = max(width,w)
-                        #print width,'x',height
-                        width -= 2
-                        height -= 2
+                        w = width - 2
+                        h = height - 2
 
-                        byte0 = (width<<6) | (height<<4) | rows[0]
+                        byte0 = (w<<6) | (h<<4) | rows[0]
                         byte1 = (rows[1]<<4) | rows[2]
                         byte2 = (rows[3]<<4) | rows[4]
 
                         glyphs[ascii] = map(lambda x: x&0xFF,[byte0, byte1, byte2])
-                        #print unichr(ascii), hex(byte0),hex(byte1),hex(byte2)
+                        print unichr(ascii), width,'x',height,hex(byte0),hex(byte1),hex(byte2)
                     except ValueError:
                         # ignore non-ascii values such as copy and name
                         pass
@@ -88,4 +95,4 @@ class Font2h(OptionMatcher):
 
 if __name__ == '__main__':
     import sys
-    sys.exit(Font2h().process(sys.argv))
+    sys.exit(Font2C().process(sys.argv))
