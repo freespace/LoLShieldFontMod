@@ -3,6 +3,12 @@
 from optmatch import OptionMatcher, optmatcher, optset
 import json
 
+cheader = """
+extern uint8_t Glyph_ASCII_Offset;
+extern uint8_t Glyphs_Count;
+extern uint8_t Glyphs[][3];
+"""
+
 class Font2C(OptionMatcher):
     @optmatcher
     def main( self, fontJsonFile):
@@ -12,17 +18,10 @@ class Font2C(OptionMatcher):
         asciivals.sort()
         asciioffset = asciivals[0]
 
-###        print '/* .h */'
-###        print '#ifndef GLYPH_H'
-###        print '#define GLYPH_H'
-###        print 'extern uint8_t Glyph_ASCII_Offset;'
-###        print 'extern uint8_t Glyphs_Count;'
-###        print '#endif'
+        print '/* .h */'
+        print cheader
 
-###        print 'extern uint8_t Glyphs[][3];'
-
-###        print '/* .c */'
-###        print '#include <inttypes.h>'
+        print '/* .c */'
         print 'uint8_t Glyph_ASCII_Offset = ', asciioffset, ';'
         print 'uint8_t Glyphs_Count = ', asciivals[-1]-asciivals[0], ';'
 
