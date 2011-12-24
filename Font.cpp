@@ -32,9 +32,9 @@ Glyph *_glyphs_ptr;
 uint8_t _glyphs_offset=0;
 uint8_t _glyphs_count=0;
 
-void _draw_row(uint8_t row, uint8_t x, uint8_t y, uint8_t set) {
+void _draw_row(uint8_t row, int x, int y, uint8_t set) {
     for (uint8_t idx = 0; idx < 4; ++idx) {
-        uint8_t xx = x+idx;
+        int xx = x+idx;
         uint8_t lsbset = row&0x1;
         LedSign::Set(xx,y, set?lsbset:!lsbset);
         row = row>>1;
@@ -66,9 +66,10 @@ uint8_t Font::SetGlyphs(Glyph *glyphs, uint8_t offset, uint8_t count) {
     */
 }
 
-int8_t Font::Draw(uint8_t letter,uint8_t x,uint8_t y,uint8_t set) {
-    if (letter > _glyphs_offset + _glyphs_count) return -1;
+int8_t Font::Draw(uint8_t letter,int x, int y, uint8_t set) {
     if (letter == ' ') return 0;
+    if (letter > _glyphs_offset + _glyphs_count) return -1;
+    if (letter < _glyphs_offset) return -1;
 
     uint8_t *g = _glyphs_ptr[letter-_glyphs_offset];
     

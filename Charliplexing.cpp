@@ -208,7 +208,7 @@ void LedSign::Clear(int8_t set) {
  * @param y is the y coordinate of the line to clear/light [0-8]
  * @param set if 1 : make all led ON, if not set or 0 : make all led OFF
  */
-void LedSign::Horizontal(int8_t y, int8_t set) {
+void LedSign::Horizontal(int y, int set) {
     for(int x=0;x<14;x++)  
         Set(x,y,set);
 }
@@ -219,7 +219,7 @@ void LedSign::Horizontal(int8_t y, int8_t set) {
  * @param x is the x coordinate of the line to clear/light [0-13]
  * @param set if 1 : make all led ON, if not set or 0 : make all led OFF
  */
-void LedSign::Vertical(int8_t x, int8_t set) {
+void LedSign::Vertical(int x, int set) {
     for(int y=0;y<9;y++)  
         Set(x,y,set);
 }
@@ -230,7 +230,7 @@ void LedSign::Vertical(int8_t x, int8_t set) {
  * calculations are done here, so we don't need to do in the
  * interrupt code
  */
-void LedSign::Set(int8_t x, int8_t y, int8_t c)
+void LedSign::Set(int x, int y, int8_t c)
 {
     // ensure x and y values are sane
     if (x >=0 && y>=0 && x < 14 && y < 9) { 

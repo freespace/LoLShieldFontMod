@@ -40,7 +40,7 @@ extern uint8_t SetGlyphs(Glyph *glyphs, uint8_t offset, uint8_t count);
  * Note that even if the letter isn't drawn, e.g. out of range, the width
  * is returned none the less.
  */ 
-extern int8_t Draw(uint8_t letter,uint8_t x,uint8_t y,uint8_t set=1);
+extern int8_t Draw(uint8_t letter, int x, int y,uint8_t set=1);
 
 }
 

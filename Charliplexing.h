@@ -17,12 +17,12 @@
 namespace LedSign
 {
     extern void Init(uint8_t mode = SINGLE_BUFFER);
-    extern void Set(int8_t x, int8_t y, int8_t c);
+    extern void Set(int x, int y, int8_t c);
     extern volatile unsigned int tcnt2;
     extern void Flip(bool blocking = false);
     extern void Clear(int8_t set=0);
-    extern void Horizontal(int8_t y, int8_t set=0);
-    extern void Vertical(int8_t x, int8_t set=0);
+    extern void Horizontal(int y, int set=0);
+    extern void Vertical(int x, int set=0);
 };
 
 #endif
