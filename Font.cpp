@@ -71,6 +71,7 @@ int8_t Font::Draw(uint8_t letter,uint8_t x,uint8_t y,uint8_t set) {
     if (letter == ' ') return 0;
 
     uint8_t *g = _glyphs_ptr[letter-_glyphs_offset];
+    
     /*
     Serial.print("g:");
     Serial.print(" 0x");
@@ -81,8 +82,9 @@ int8_t Font::Draw(uint8_t letter,uint8_t x,uint8_t y,uint8_t set) {
     Serial.print(g[2]&0xFF, HEX);
     Serial.println("");
     */
+
     uint8_t b = g[0];
-    uint8_t w = 2+((b&0xC0)>>6);
+    uint8_t w = 1+((b&0xC0)>>6);
     uint8_t h = 2+((b&0x30)>>4);
 
     /*Serial.print(w);

@@ -24,13 +24,22 @@ class Font2C(OptionMatcher):
 ###        print '/* .c */'
 ###        print '#include <inttypes.h>'
         print 'uint8_t Glyph_ASCII_Offset = ', asciioffset, ';'
-        print 'uint8_t Glyphs_Count = ', len(asciivals), ';'
+        print 'uint8_t Glyphs_Count = ', asciivals[-1]-asciivals[0], ';'
 
         print 'uint8_t Glyphs[][3] = {'
-        for asciival in asciivals:
-            bbb = glyphs[asciival]
-            print '    { %s,%s,%s }, '%(hex(bbb[0]), hex(bbb[1]), hex(bbb[2])),
-            print '/*', unichr(asciival),'*/'
+
+        cnt = 0
+        while cnt + asciioffset <= asciivals[-1]:
+            asciival = cnt + asciioffset
+            if asciival in asciivals:
+                bbb = glyphs[asciival]
+                print '    { %s,%s,%s }, '%(hex(bbb[0]), hex(bbb[1]), hex(bbb[2])),
+                print '/*', unichr(asciival),'*/'
+            else:
+                print '    { 0xff,0xff,0xff }, ',
+                print '/*', unichr(asciival),'*/'
+            cnt+=1
+
         print '};'
 
     def load_glyphs(self, fontJsonFile):
@@ -47,8 +56,8 @@ class Font2C(OptionMatcher):
           byte1 encodes row[1]:4 row[2]:4
           byte3 encodes row[3]:4 row[4]:4
 
-        w and h are encoded as 2 offset integers, e.g.
-        if width is 2+w and height is 2+h
+        w is encoded as 1-offset int, e.g. 2 is stored as 1 (1+1=2)
+        h is encoded as 2-offset int, e.g. 4 is stored as 2 (2+2=4)
 
         for now it is hard coded that each glyph is no
         more than 4x5.
@@ -79,7 +88,7 @@ class Font2C(OptionMatcher):
                                 w-=1
                                 mask = mask>>1
                             width = max(width,w)
-                        w = width - 2
+                        w = width - 1
                         h = height - 2
 
                         byte0 = (w<<6) | (h<<4) | rows[0]
@@ -87,7 +96,7 @@ class Font2C(OptionMatcher):
                         byte2 = (rows[3]<<4) | rows[4]
 
                         glyphs[ascii] = map(lambda x: x&0xFF,[byte0, byte1, byte2])
-                        print unichr(ascii), width,'x',height,hex(byte0),hex(byte1),hex(byte2)
+                        #print unichr(ascii), width,'x',height,hex(byte0),hex(byte1),hex(byte2)
                     except ValueError:
                         # ignore non-ascii values such as copy and name
                         pass
