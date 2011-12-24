@@ -196,7 +196,7 @@ void LedSign::Flip(bool blocking)
 /** Clear the screen completely
  * @param set if 1 : make all led ON, if not set or 0 : make all led OFF
  */
-void LedSign::Clear(int set) {
+void LedSign::Clear(int8_t set) {
     for(int x=0;x<14;x++)  
         for(int y=0;y<9;y++) 
             Set(x,y,set);
@@ -208,7 +208,7 @@ void LedSign::Clear(int set) {
  * @param y is the y coordinate of the line to clear/light [0-8]
  * @param set if 1 : make all led ON, if not set or 0 : make all led OFF
  */
-void LedSign::Horizontal(int y, int set) {
+void LedSign::Horizontal(int8_t y, int8_t set) {
     for(int x=0;x<14;x++)  
         Set(x,y,set);
 }
@@ -219,7 +219,7 @@ void LedSign::Horizontal(int y, int set) {
  * @param x is the x coordinate of the line to clear/light [0-13]
  * @param set if 1 : make all led ON, if not set or 0 : make all led OFF
  */
-void LedSign::Vertical(int x, int set) {
+void LedSign::Vertical(int8_t x, int8_t set) {
     for(int y=0;y<9;y++)  
         Set(x,y,set);
 }
@@ -230,19 +230,22 @@ void LedSign::Vertical(int x, int set) {
  * calculations are done here, so we don't need to do in the
  * interrupt code
  */
-void LedSign::Set(uint8_t x, uint8_t y, uint8_t c)
+void LedSign::Set(int8_t x, int8_t y, int8_t c)
 {
-    uint8_t pin_low  = ledMap[x*2+y*28+1];
-    uint8_t pin_high = ledMap[x*2+y*28+0];
-    // pin_low is directly the address in the led array (minus 2 because the 
-    // first two bytes are used for RS232 communication), but
-    // as it is a two byte array we need to check pin_high also.
-    // If pin_high is bigger than 8 address has to be increased by one
-    if (c == 1) {
-        workBuffer[(pin_low-2)*2 + (pin_high / 8)] |=  _BV(pin_high & 0x07);   // ON
-    } 
-    else {
-        workBuffer[(pin_low-2)*2 + (pin_high / 8)] &= ~_BV(pin_high & 0x07);   // OFF
+    // ensure x and y values are sane
+    if (x >=0 && y>=0 && x < 14 && y < 9) { 
+        uint8_t pin_low  = ledMap[x*2+y*28+1];
+        uint8_t pin_high = ledMap[x*2+y*28+0];
+        // pin_low is directly the address in the led array (minus 2 because the 
+        // first two bytes are used for RS232 communication), but
+        // as it is a two byte array we need to check pin_high also.
+        // If pin_high is bigger than 8 address has to be increased by one
+        if (c == 1) {
+            workBuffer[(pin_low-2)*2 + (pin_high / 8)] |=  _BV(pin_high & 0x07);   // ON
+        } 
+        else {
+            workBuffer[(pin_low-2)*2 + (pin_high / 8)] &= ~_BV(pin_high & 0x07);   // OFF
+        }
     }
 }
 
