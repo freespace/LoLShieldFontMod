@@ -3,7 +3,7 @@
 
 #include "sifontv1.h"
 
-char display_str[181];
+char display_str[180];
 
 // returns length of string read, 0 if nothing was read
 int _readstring(char *buf, uint8_t bufsize) {
@@ -54,7 +54,7 @@ void loop() {
     Font::Draw('>', 0,2);
   }
 
-  if (xoffset) delay(80);
+  if (xoffset) delay(90);
   else delay(1000);
   
   xoffset+=1;
