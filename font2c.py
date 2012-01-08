@@ -88,15 +88,18 @@ class Font2C(OptionMatcher):
                                 w-=1
                                 mask = mask>>1
                             width = max(width,w)
+                        if width < 1 or height < 1:
+                            raise Exception('Glyph %s is too small, must be 1x1 or greater'%(unichr(ascii)))
+
                         w = width - 1
-                        h = height - 2
+                        h = height - 1
 
                         byte0 = (w<<6) | (h<<4) | rows[0]
                         byte1 = (rows[1]<<4) | rows[2]
                         byte2 = (rows[3]<<4) | rows[4]
 
                         glyphs[ascii] = map(lambda x: x&0xFF,[byte0, byte1, byte2])
-                        #print unichr(ascii), width,'x',height,hex(byte0),hex(byte1),hex(byte2)
+                        print '//',unichr(ascii), width,'x',height,hex(byte0),hex(byte1),hex(byte2)
                     except ValueError:
                         # ignore non-ascii values such as copy and name
                         pass

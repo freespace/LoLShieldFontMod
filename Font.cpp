@@ -86,7 +86,7 @@ int8_t Font::Draw(uint8_t letter,int x, int y, uint8_t set) {
 
     uint8_t b = g[0];
     uint8_t w = 1+((b&0xC0)>>6);
-    uint8_t h = 2+((b&0x30)>>4);
+    uint8_t h = 1+((b&0x30)>>4);
 
     /*Serial.print(w);
     Serial.print(" x ");
