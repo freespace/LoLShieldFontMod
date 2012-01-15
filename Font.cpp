@@ -28,86 +28,43 @@
 
 #include <Arduino.h>
 
-Glyph *_glyphs_ptr;
+Glyph_t *_glyphs_ptr;
 uint8_t _glyphs_offset=0;
 uint8_t _glyphs_count=0;
 
 void _draw_row(uint8_t row, int x, int y, uint8_t set) {
-    for (uint8_t idx = 0; idx < 4; ++idx) {
-        int xx = x+idx;
+    int xx = x;
+    //Serial.println(row);
+    while(row) {
         uint8_t lsbset = row&0x1;
         LedSign::Set(xx,y, set?lsbset:!lsbset);
         row = row>>1;
+        xx+=1;
     }
 }
 
-uint8_t Font::SetGlyphs(Glyph *glyphs, uint8_t offset, uint8_t count) {
+uint8_t Font::SetGlyphs(Glyph_t *glyphs, uint8_t offset, uint8_t count) {
     _glyphs_ptr = glyphs;
     _glyphs_offset = offset;
     _glyphs_count = count;
-
-    /*
-    Serial.print(offset);
-    Serial.print(" ");
-    Serial.println(count);
-
-    for (int idx = 0; idx < count; ++idx) {
-        Serial.print("g[");
-        Serial.print(idx);
-        Serial.print("]=");
-        Serial.print(" 0x");
-        Serial.print(glyphs[idx][0], HEX);
-        Serial.print(" 0x");
-        Serial.print(glyphs[idx][1], HEX);
-        Serial.print(" 0x");
-        Serial.print(glyphs[idx][2], HEX);
-        Serial.println("");
-    }
-    */
 }
 
-int8_t Font::Draw(uint8_t letter,int x, int y, uint8_t set) {
+int8_t Font::Draw(uint8_t letter,int x, int y, uint8_t set, uint8_t width) {
+    //Serial.print(x);
+    //Serial.print(' ');
+    //Serial.println(y);
+
     if (letter == ' ') return 0;
     if (letter > _glyphs_offset + _glyphs_count) return -1;
     if (letter < _glyphs_offset) return -1;
 
-    uint8_t *g = _glyphs_ptr[letter-_glyphs_offset];
+    Glyph_t *gptr = _glyphs_ptr+letter-_glyphs_offset;
+
+    y += gptr->yoffset;
+    for (int idx; idx < 8; ++idx) {
+        _draw_row(gptr->rows[idx], x, y+idx, set);
+    }
     
-    /*
-    Serial.print("g:");
-    Serial.print(" 0x");
-    Serial.print(g[0]&0xFF, HEX);
-    Serial.print(" 0x");
-    Serial.print(g[1]&0xFF, HEX);
-    Serial.print(" 0x");
-    Serial.print(g[2]&0xFF, HEX);
-    Serial.println("");
-    */
-
-    uint8_t b = g[0];
-    uint8_t w = 1+((b&0xC0)>>6);
-    uint8_t h = 1+((b&0x30)>>4);
-
-    /*Serial.print(w);
-    Serial.print(" x ");
-    Serial.println(h);*/
-    // first row
-    b = b&0x0F;
-    _draw_row(b, x, y, set);
-    
-    // second and third row
-    b = (g[1]&0xF0)>>4;
-    _draw_row(b, x, y+1, set);
-
-    b = (g[1]&0x0F);
-    _draw_row(b, x, y+2, set);
-    
-    // fourth row and fifth row
-    b = (g[2]&0xF0)>>4;
-    _draw_row(b, x, y+3, set);
-
-    b = (g[2]&0x0F);
-    _draw_row(b, x, y+4, set);
-
-    return w;
+    if (width) return width;
+    else return gptr->width;
 }

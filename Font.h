@@ -27,12 +27,17 @@
 
 #include <inttypes.h>
 
-typedef uint8_t Glyph[3];
+typedef struct {
+    uint8_t width;
+    char yoffset;
+    uint8_t rows[8];
+} Glyph_t;
+
 
 namespace Font
 {
 
-extern uint8_t SetGlyphs(Glyph *glyphs, uint8_t offset, uint8_t count);
+extern uint8_t SetGlyphs(Glyph_t *glyphs, uint8_t offset, uint8_t count);
 /**
  * Returns the width of the letter, -1 if unsuccessful, 0
  * if a space was requested.
@@ -40,7 +45,7 @@ extern uint8_t SetGlyphs(Glyph *glyphs, uint8_t offset, uint8_t count);
  * Note that even if the letter isn't drawn, e.g. out of range, the width
  * is returned none the less.
  */ 
-extern int8_t Draw(uint8_t letter, int x, int y,uint8_t set=1);
+extern int8_t Draw(uint8_t letter, int x, int y,uint8_t set=1, uint8_t width=0);
 
 }
 

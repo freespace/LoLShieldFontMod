@@ -1,4 +1,23 @@
 #!/usr/bin/env python
+"""
+This script reads json produced by:
+
+    http://www.pentacom.jp/pentacom/bitfontmaker2/
+
+and produces .h and .c files suitable for the Arduino environment.
+
+The maximum size of each glyph is 8x8, represented as an 8 element byte array.
+
+In addition to the glyph, yoffset and glyph width is stored, so the proportional
+rendering is possible, as is descenders. Positive yoffset moves the glyph upwards.
+
+Descenders are automatically detected - the script pixels below the 12th row
+(origin top left) as descenders.
+
+Note that the script simply scans the rows top-down, stopping when 8 rows,
+starting with the first non-zero row, has been read. The 8 columns are read
+starting from column 2.
+"""
 
 from optmatch import OptionMatcher, optmatcher, optset
 import json
@@ -6,8 +25,79 @@ import json
 cheader = """
 extern uint8_t Glyph_ASCII_Offset;
 extern uint8_t Glyphs_Count;
-extern uint8_t Glyphs[][3];
 """
+
+class Glyph(object):
+    @classmethod
+    def unknownGlyph(self, asciiChar):
+        return Glyph(asciiChar, [0xff]*8)
+
+    def __init__(self, asciiChar, jrows):
+        super(Glyph, self).__init__()
+
+        self.asciiChar = asciiChar
+        self.rows = []
+        rowcnt = 0
+        rowstep = 0
+        # extract the first 8 rows, starting with the first non-empty row
+        # XXX handle when glyph is less than 4 rows tall
+        for rowidx, row in enumerate(jrows):
+            if row:
+                rowstep = 1
+            if rowstep:
+                self.rows.append(row)
+                rowcnt += rowstep
+                if rowcnt >= 8:
+                    if rowidx > 11:
+                        self.yoffset = 11-rowidx
+                    break
+
+        # since left is LSB, throw away the first 2 columns by bit shifting
+        # lower. Then throw away the the rest by AND'ing with 0x00FF
+        maxrowval = -1
+        for idx in xrange(len(self.rows)):
+            row = self.rows[idx]
+            row = row >> 2
+            row = row & 0xFF
+            if row > maxrowval:
+                maxrowval = row
+            self.rows[idx] = row
+
+        self.width = 0
+        while maxrowval:
+            self.width += 1
+            maxrowval = maxrowval >> 1
+
+        print '//encoded glyph', self.asciiChar, 'width:',self.width, 'yoffset:', self.yoffset
+
+    @classmethod
+    def cStructDef(self):
+        return ""
+        return """
+typedef struct {
+    uint8_t width;
+    uint8_t yoffset;
+    uint8_t rows[8];
+} Glyph_t;
+            """
+
+    @classmethod
+    def cType(self):
+        return 'Glyph_t'
+
+    def printCDef(self):
+        """
+        Prints out the C init'd code to initalize a struct as defined in 
+        cStructDef
+        """
+        print '{ /*',self.asciiChar,'*/'
+        print ' ',self.width,','
+        print ' ',self.yoffset,','
+        print ' {'
+        for row in self.rows:
+            print '  ',row,','
+        print ' }'
+        print '}'
 
 class Font2C(OptionMatcher):
     @optmatcher
@@ -21,23 +111,25 @@ class Font2C(OptionMatcher):
         if not noHeaderFlag:
             print '/* .h */'
             print cheader
+            print Glyph.cStructDef()
+            print 'extern',Glyph.cType(),' Glyphs[];'
 
         print '/* .c */'
         print 'uint8_t Glyph_ASCII_Offset = ', asciioffset, ';'
-        print 'uint8_t Glyphs_Count = ', asciivals[-1]-asciivals[0], ';'
+        print 'uint8_t Glyphs_Count = ', asciivals[-1]-asciivals[0]+1, ';'
 
-        print 'uint8_t Glyphs[][3] = {'
+        print Glyph.cType(),'Glyphs[] = {'
 
         cnt = 0
         while cnt + asciioffset <= asciivals[-1]:
             asciival = cnt + asciioffset
+            glyph = None
             if asciival in asciivals:
-                bbb = glyphs[asciival]
-                print '    { %s,%s,%s }, '%(hex(bbb[0]), hex(bbb[1]), hex(bbb[2])),
-                print '/*', unichr(asciival),'*/'
+                glyph = glyphs[asciival]
             else:
-                print '    { 0xff,0xff,0xff }, ',
-                print '/*', unichr(asciival),'*/'
+                glyph = Glyph.unknownGlyph(chr(asciival))
+            glyph.printCDef()
+            print '  ,'
             cnt+=1
 
         print '};'
@@ -49,19 +141,6 @@ class Font2C(OptionMatcher):
             font = json.loads(f.read())
 
         keys = font.keys()
-        """
-        glyphs maps int => [byte0, byte1, byte2]
-
-          byte0 encodes: w:2 h:2 row[0]:4
-          byte1 encodes row[1]:4 row[2]:4
-          byte3 encodes row[3]:4 row[4]:4
-
-        w is encoded as 1-offset int, e.g. 2 is stored as 1 (1+1=2)
-        h is encoded as 2-offset int, e.g. 4 is stored as 2 (2+2=4)
-
-        for now it is hard coded that each glyph is no
-        more than 4x5.
-        """
         glyphs = {}
         spacing = 1
         for key in keys:
@@ -75,31 +154,9 @@ class Font2C(OptionMatcher):
                         if ascii > 127:
                             continue
 
-                        rows = font[key][7:7+5]
-                        rows = map(lambda x:(x>>2)&0x0F, rows)
-                        height = 0
-                        width = 0
-                        for row in rows:
-                            if row:
-                                height += 1
-                            mask = 0x8;
-                            w = 4
-                            while not row&mask and mask:
-                                w-=1
-                                mask = mask>>1
-                            width = max(width,w)
-                        if width < 1 or height < 1:
-                            raise Exception('Glyph %s is too small, must be 1x1 or greater'%(unichr(ascii)))
 
-                        w = width - 1
-                        h = height - 1
-
-                        byte0 = (w<<6) | (h<<4) | rows[0]
-                        byte1 = (rows[1]<<4) | rows[2]
-                        byte2 = (rows[3]<<4) | rows[4]
-
-                        glyphs[ascii] = map(lambda x: x&0xFF,[byte0, byte1, byte2])
-                        print '//',unichr(ascii), width,'x',height,hex(byte0),hex(byte1),hex(byte2)
+                        glyph = Glyph(chr(ascii), font[key])
+                        glyphs[ascii] = glyph
                     except ValueError:
                         # ignore non-ascii values such as copy and name
                         pass

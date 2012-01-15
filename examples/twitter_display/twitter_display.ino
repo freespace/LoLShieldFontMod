@@ -21,10 +21,17 @@ int _readstring(char *buf, uint8_t bufsize) {
           buf[cnt++] = c;
       }
     } while(Serial.available());
-    buf[cnt] = '\0'; 
+    buf[cnt] = '\0';
     Serial.println(cnt);
-    delay(100);
+    delay(200);
   }
+  
+  //Serial.print(" len: ");
+  //Serial.println(strlen(buf));
+
+  // strip trailing spaces
+  while(buf[--cnt] == ' ') buf[cnt] = '\0';
+   
   return cnt;
 }
     
@@ -48,25 +55,40 @@ void loop() {
     for (int idx = 0; idx < l; ++idx) {
       int w=Font::Draw(display_str[idx], -xoffset+x,2);
       if (w>0) x=x+w+1;
-      else if (w == 0) x = x + 3;
+      else if (w == 0) x = x+3+1;
     }
   } else {
     Font::Draw('>', 0,2);
   }
 
-  if (xoffset) delay(90);
-  else delay(1000);
+  /*Serial.print(xoffset);
+  Serial.print(' ');
+  Serial.println(x);*/
   
-  xoffset+=1;
-  if (x<=xoffset) {
-    xoffset = 0;
-    if (_readstring(display_str, sizeof display_str)) {
-      Serial.print("display_str: ");
-      Serial.print(display_str);
-      Serial.print(" len: ");
-      Serial.println(strlen(display_str));
+  if (xoffset) delay(100);
+  else delay(1500);
+  
+  boolean getdispstr = false;
+  
+  // 15 because 14 chars + 1 px spacing
+  if (xoffset == 0 && x <= 15) {
+    // no need to scroll
+    getdispstr = true;
+  } else {
+    xoffset+=1;
+    if (x<=xoffset) {
+      xoffset = 0;
+      getdispstr = true;
     }
   }
+  
+  if (getdispstr) {
+     if (_readstring(display_str, sizeof display_str)) {
+      Serial.print("display_str (stripped): ");
+      Serial.println(display_str);
+    }
+  }
+
 }
 
 
